@@ -1,53 +1,50 @@
-﻿using System.Data;
+﻿using sqlapp.Models;
 using System.Data.SqlClient;
-using sqlapp.Models;
 
 namespace sqlapp.Services
 {
-    public class ProductService
-    {
-        private static string db_source = "db-appserver.database.windows.net";
-        private static string db_user = "sqladmin";
-        private static string db_password = "Asp.netmvc28";
-        private static string db_database = "Appdb";
 
+    // This service will interact with our Product data in the SQL database
+    public class ProductService : IProductService
+    {
+        private readonly IConfiguration _configuration;
+        public ProductService(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
         private SqlConnection GetConnection()
         {
-            var _builder = new SqlConnectionStringBuilder();
-            _builder.DataSource = db_source;
-            _builder.UserID = db_user;
-            _builder.Password = db_password;
-            _builder.InitialCatalog = db_database;
 
-            return new SqlConnection(_builder.ConnectionString);
-
+            return new SqlConnection(_configuration.GetConnectionString("SQLConnection"));
         }
         public List<Product> GetProducts()
         {
-            SqlConnection conn = GetConnection();
-            List<Product> _product_list = new List<Product>();
-            string statement = "SELECT ProductID, ProductName, Quantity from Products";
+            List<Product> _product_lst = new List<Product>();
+            string _statement = "SELECT ProductID,ProductName,Quantity from Products";
+            SqlConnection _connection = GetConnection();
 
-            conn.Open();
+            _connection.Open();
 
-            SqlCommand cmd = new SqlCommand(statement, conn);
-            using (SqlDataReader reader = cmd.ExecuteReader())
+            SqlCommand _sqlcommand = new SqlCommand(_statement, _connection);
+
+            using (SqlDataReader _reader = _sqlcommand.ExecuteReader())
             {
-                while(reader.Read())
+                while (_reader.Read())
                 {
-                    Product product = new Product()
+                    Product _product = new Product()
                     {
-                        ProductID = reader.GetInt32(0),
-                        ProductName = reader.GetString(1),
-                        Quantity = reader.GetInt32(2)
+                        ProductID = _reader.GetInt32(0),
+                        ProductName = _reader.GetString(1),
+                        Quantity = _reader.GetInt32(2)
                     };
 
-                    _product_list.Add(product);
+                    _product_lst.Add(_product);
                 }
-
             }
-            conn.Close();
-            return _product_list;
+            _connection.Close();
+            return _product_lst;
         }
+
     }
 }
+
