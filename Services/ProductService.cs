@@ -1,4 +1,5 @@
-﻿using sqlapp.Models;
+﻿using Microsoft.FeatureManagement;
+using sqlapp.Models;
 using System.Data.SqlClient;
 
 namespace sqlapp.Services
@@ -8,15 +9,35 @@ namespace sqlapp.Services
     public class ProductService : IProductService
     {
         private readonly IConfiguration _configuration;
-        public ProductService(IConfiguration configuration)
+        private readonly IFeatureManager _featureManager;
+
+
+        public ProductService(IConfiguration configuration, IFeatureManager featureManager)
         {
             _configuration = configuration;
+            _featureManager = featureManager;
         }
         private SqlConnection GetConnection()
         {
-
-            return new SqlConnection(_configuration.GetConnectionString("SQLConnection"));
+            // This line get connection string from Configuration in WebApp
+            //return new SqlConnection(_configuration.GetConnectionString("SQLConnection")); // This line get connectionString from 
+            
+            // This line get connection string from Azure configuration  
+            return new SqlConnection(_configuration["SQLConnection"]);
         }
+
+        public async Task<bool> IsBeta()
+        {
+            if(await _featureManager.IsEnabledAsync("beta"))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public List<Product> GetProducts()
         {
             List<Product> _product_lst = new List<Product>();
